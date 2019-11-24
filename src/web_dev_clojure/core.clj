@@ -13,17 +13,22 @@
 (defn shorten [request]
   (def incoming-url (-> request :params :url))
   (if (contains? reverse-map incoming-url)
-    (get reverse-map incoming-url)
+    (do {:status 200
+   :body (str "Already Shrunken URL is " (get reverse-map incoming-url))
+   :headers {"Content-Type" "text/html"}})
     (do (def new_url (rand-str 5))
         (def url-map (assoc url-map new_url incoming-url))
-        (def reverse-map (assoc reverse-map incoming-url new_url))))
-  {:status 200
-   :body (str "Shrunken URL is " new_url)
-   :headers {"Content-Type" "text/html"}})
+        (def reverse-map (assoc reverse-map incoming-url new_url))
+        {:status 200
+     :body (str "The new shrunken URL is " new_url)
+     :headers {"Conten-Type" "text/html"}})))
+
 (defn redirect [request]
   (def url (-> request :params :url))
   {:status 200
-   :body (get url-map url)
+   :body (if (contains? url-map url)
+           (str "The original URL is: " (get url-map url))
+           (str "shrunken URL not found, try to shorten it first."))
    :headers {"Content-Type" "text/html"}})
 
 (defn rand-str [len]
