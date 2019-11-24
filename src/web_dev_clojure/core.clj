@@ -2,39 +2,30 @@
   (:gen-class)
   (:require [compojure.core :refer [defroutes GET POST]]
             [ring.adapter.jetty :as jetty]))
-(def port ":3000")
-(def host "localhost")
+
 (def url-map {})
 (def reverse-map {})
 
+;; random string generator
 (defn rand-str [len]
   (apply str (take len (repeatedly #(char (+ (rand 40) 65))))))
 
-(comment (defn shorten [request]
-   (def incoming-url (-> request :params :url))
-   (if (contains? reverse-map incoming-url)
-     (do {:status 200
-          :body (str "Already Shrunken URL is " (get reverse-map incoming-url))
-          :headers {"Content-Type" "text/html"}})
-     (do (def new_url (rand-str 5))
-         (def url-map (assoc url-map new_url incoming-url))
-         (def reverse-map (assoc reverse-map incoming-url new_url))
-         {:status 200
-          :body (str "The new shrunken URL is " new_url)
-          :headers {"Content-Type" "text/html"}}))))
 
 ;; Shrink the provided URL
 (defn shrink [request]
-  (def incoming-url (-> request :params :url))
+  (def incoming_url (-> request :params :url))
+  (def final_url "")
   {
     :status 200
     :headers {"Content-Type" "text/html"}
-    :body (if (contains? reverse-map incoming-url)
-                (str "Already shrunken URL is " (get reverse-map incoming-url))
+   :body (if (contains? reverse-map incoming_url)
+           (do (def final_url (get reverse-map incoming_url))
+                (str "Already shrunken URL is "  final_url))
                 (do (def new_url (rand-str 5))
-                    (def url-map (assoc url-map new_url incoming-url))
-                    (def reverse-map (assoc reverse-map incoming-url new_url))
-                    (str "The new shrunken URL is " new_url)))
+                    (def final_url (str "redirector.io/" new_url))
+                    (def url-map (assoc url-map final_url incoming_url))
+                    (def reverse-map (assoc reverse-map incoming_url final_url))
+                    (str "The new shrunken URL is " final_url)))
   })
 
 
@@ -43,7 +34,7 @@
 ;; shrunken URL
 ;; TODO Redirect instead of return
 (defn redirect [request]
-  (def url (-> request :params :url))
+  (def url (str "redirector.io/" (-> request :params :url)))
   {:status 200
    :body (if (contains? url-map url)
            (str "The original URL is: " (get url-map url))
@@ -55,7 +46,7 @@
 
 (defroutes redirector
   (GET "/shrink/:url" [] shrink)
-  (GET "/redirect/:url" [] redirect))
+  (GET "/redirect/redirector.io/:url" [] redirect))
 
 (defn -main []
   (jetty/run-jetty redirector {:port 3000}))
