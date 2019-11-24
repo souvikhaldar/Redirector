@@ -11,8 +11,8 @@ Then run `(-main)` which is located in `core.clj`.
 
 It should be running on `localhost:3000`.
 
-	### Shrink a URL
-	Make request on browser-->  `localhost:3000/shrink/<Enter-your-url-here>`
+	* Shrink a URL  
+		Make request on browser-->  `localhost:3000/shrink/<Enter-your-url-here>`
 
-	### Retrive the original URL
-	Make request on browset--> `localhost:3000/redirect/<Enter-the-shrunken-URL>`
+	* Retrive the original URL  
+		Make request on browset--> `localhost:3000/redirect/<Enter-the-shrunken-URL>`
