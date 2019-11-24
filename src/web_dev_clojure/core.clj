@@ -10,19 +10,38 @@
 (defn rand-str [len]
   (apply str (take len (repeatedly #(char (+ (rand 40) 65))))))
 
-(defn shorten [request]
-  (def incoming-url (-> request :params :url))
-  (if (contains? reverse-map incoming-url)
-    (do {:status 200
-   :body (str "Already Shrunken URL is " (get reverse-map incoming-url))
-   :headers {"Content-Type" "text/html"}})
-    (do (def new_url (rand-str 5))
-        (def url-map (assoc url-map new_url incoming-url))
-        (def reverse-map (assoc reverse-map incoming-url new_url))
-        {:status 200
-     :body (str "The new shrunken URL is " new_url)
-     :headers {"Conten-Type" "text/html"}})))
+(comment (defn shorten [request]
+   (def incoming-url (-> request :params :url))
+   (if (contains? reverse-map incoming-url)
+     (do {:status 200
+          :body (str "Already Shrunken URL is " (get reverse-map incoming-url))
+          :headers {"Content-Type" "text/html"}})
+     (do (def new_url (rand-str 5))
+         (def url-map (assoc url-map new_url incoming-url))
+         (def reverse-map (assoc reverse-map incoming-url new_url))
+         {:status 200
+          :body (str "The new shrunken URL is " new_url)
+          :headers {"Content-Type" "text/html"}}))))
 
+;; Shrink the provided URL
+(defn shrink [request]
+  (def incoming-url (-> request :params :url))
+  {
+    :status 200
+    :headers {"Content-Type" "text/html"}
+    :body (if (contains? reverse-map incoming-url)
+                (str "Already shrunken URL is " (get reverse-map incoming-url))
+                (do (def new_url (rand-str 5))
+                    (def url-map (assoc url-map new_url incoming-url))
+                    (def reverse-map (assoc reverse-map incoming-url new_url))
+                    (str "The new shrunken URL is " new_url)))
+  })
+
+
+
+;; Return the original URL corresponding to the provided
+;; shrunken URL
+;; TODO Redirect instead of return
 (defn redirect [request]
   (def url (-> request :params :url))
   {:status 200
@@ -35,7 +54,7 @@
   (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
 
 (defroutes redirector
-  (GET "/shorten/:url" [] shorten)
+  (GET "/shrink/:url" [] shrink)
   (GET "/redirect/:url" [] redirect))
 
 (defn -main []
