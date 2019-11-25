@@ -16,3 +16,6 @@ It should be running on `localhost:3000`.
 
 	* Retrive the original URL  
 		Make request on browset--> `localhost:3000/redirect/<Enter-the-shrunken-URL>`
+
+## Demonstration 
+Follow this [link](https://youtu.be/IFA7gmiVa8E) to see a video demonstration of this service.  
