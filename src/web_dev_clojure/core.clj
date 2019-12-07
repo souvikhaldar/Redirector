@@ -3,50 +3,44 @@
   (:require [compojure.core :refer [defroutes GET POST]]
             [ring.adapter.jetty :as jetty]))
 
-(def url-map {})
-(def reverse-map {})
+; url is used as index and value is hashc {url hash}
+(def store (ref {}))
 
-;; random string generator
 (defn rand-str [len]
   (apply str (take len (repeatedly #(char (+ (rand 40) 65))))))
 
+; TODO: 
+; Hash should be unique
+; Some char are not valid for url
+(defn insert-url! [url]
+  (dosync
+   (ref-set store (assoc @store url (rand-str 6)))))
 
-;; Shrink the provided URL
+(defn lookup-hash [hash]
+  (some #(when (= (second %) hash) (first %)) @store))
+
+(defn resp [body]
+  {:headers {"Content-Type" "text/html"}
+   :status 200
+   :body body})
+
 (defn shrink [request]
-  (def incoming_url (-> request :params :url))
-  (def final_url "")
-  {
-    :status 200
-    :headers {"Content-Type" "text/html"}
-   :body (if (contains? reverse-map incoming_url)
-           (do (def final_url (get reverse-map incoming_url))
-                (str "Already shrunken URL is "  final_url))
-                (do (def new_url (rand-str 5))
-                    (def final_url (str "redirector.io/" new_url))
-                    (def url-map (assoc url-map final_url incoming_url))
-                    (def reverse-map (assoc reverse-map incoming_url final_url))
-                    (str "The new shrunken URL is " final_url)))
-  })
+  (let [url (-> request :params :url)
+        hash (get @store url)]
+    (if (nil? hash)
+      (resp (get (insert-url! url) url))
+      (resp hash))))
 
-
-
-;; Return the original URL corresponding to the provided
-;; shrunken URL
-;; TODO Redirect instead of return
 (defn redirect [request]
-  (def url (str "redirector.io/" (-> request :params :url)))
-  {:status 200
-   :body (if (contains? url-map url)
-           (str "The original URL is: " (get url-map url))
-           (str "shrunken URL not found, try to shorten it first."))
-   :headers {"Content-Type" "text/html"}})
-
-(defn rand-str [len]
-  (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
+  (let [hash (-> request :params :hash)
+        url (lookup-hash hash)]
+    (if url
+      (resp url)
+      (resp (str "invalid hash: " hash)))))
 
 (defroutes redirector
   (GET "/shrink/:url" [] shrink)
-  (GET "/redirect/redirector.io/:url" [] redirect))
+  (GET "/redirect/:hash" [] redirect))
 
 (defn -main []
   (jetty/run-jetty redirector {:port 3000}))
